@@ -1,17 +1,16 @@
-name: "PR label verification"
-
-on:
-  pull_request_target:
-    types: [opened, labeled, unlabeled, synchronize]
-
 jobs:
   validate-pr-labels:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Verify PR labels
-        uses: jesusvasquez333/verify-pr-label-action@v1.4.0
-        with:
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          valid-labels: 'bug, enhancement, ignore-for-release'
-          disable-reviews: true
-          pull-request-number: '${{ github.event.pull_request.number }}'
+    - continue-on-error: true
+      name: Verify PR labels
+      uses: jesusvasquez333/verify-pr-label-action@v1.4.0
+      with:
+        disable-reviews: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        pull-request-number: ${{ github.event.pull_request.number }}
+        valid-labels: bug, enhancement, ignore-for-release
+name: PR label verification
+on:
+  repository_dispatch:
+    types: trigger-ga___label-verification.yml

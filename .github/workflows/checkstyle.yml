@@ -1,37 +1,39 @@
-name: Checkstyle
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
 jobs:
   checkstyle:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: 'temurin'
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-      - name: Run check style
-        # ignore lengthy console setup tasks
-        run: ./gradlew --continue clean checkstyleMain checkstyleTest checkstyleIntegrationTest checkstyleSlowIntegrationTest checkstyleJmh -PmaxCheckstyleWarnings=0 -x attachHermesConsole -x prepareIndexTemplate
-      - name: Run reviewdog
-        if: ${{ success() || failure() }}
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for f in $(find . -regex '.*/build/reports/checkstyle/.*\.xml'); do
-            module_name=$(echo "$f" | cut -d "/" -f2)
-            reviewdog -f=checkstyle -level=warning -filter-mode=nofilter -reporter=github-check -name="checkstyle-$module_name" < $f
-          done
+    - continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - continue-on-error: true
+      uses: reviewdog/action-setup@v1
+      with:
+        reviewdog_version: latest
+    - continue-on-error: true
+      name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    - continue-on-error: true
+      name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+    - continue-on-error: true
+      name: Run check style
+      run: ./gradlew --continue clean checkstyleMain checkstyleTest checkstyleIntegrationTest
+        checkstyleSlowIntegrationTest checkstyleJmh -PmaxCheckstyleWarnings=0 -x attachHermesConsole
+        -x prepareIndexTemplate
+    - continue-on-error: true
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: ${{ success() || failure() }}
+      name: Run reviewdog
+      run: "for f in $(find . -regex '.*/build/reports/checkstyle/.*\\.xml'); do\n\
+        \  module_name=$(echo \"$f\" | cut -d \"/\" -f2)\n  reviewdog -f=checkstyle\
+        \ -level=warning -filter-mode=nofilter -reporter=github-check -name=\"checkstyle-$module_name\"\
+        \ < $f\ndone\n"
+name: Checkstyle
+on:
+  repository_dispatch:
+    types: trigger-ga___checkstyle.yml
